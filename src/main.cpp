@@ -36,80 +36,6 @@ enum Connections
 };
 
 
-
-
-namespace Components
-{
-    enum ComponentType
-    {
-        VOLTAGE_SOURCE,
-        RESISTOR,
-        WIRE,
-    };
-
-    struct ConnectionPoint
-    {
-        Vector2 pos;
-        Component* parent;
-    };
-
-    class Component
-    {
-        public:
-            Vector2 pos;
-            ConnectionPoint connectionPoints[2];
-            Vector2 vectorVoltage;
-            bool isPlaced = false;
-            int type;
-            float value; // Represents things as voltage, charge, resistance etc.
-            void Draw(){}
-            void VoltageAffect(float inVoltage){}
-            void Place() { 
-                isPlaced = true;
-            };
-
-        Component(int type, float value)
-        {
-            this->type = type;
-            this->value = value;
-        }
-    };
-   
-
-  
-
-    class VoltageSource : Component
-    {
-        public:
-            void Draw() 
-            {
-                float size = 30;
-                DrawCircleLinesV(pos, size, WHITE);
-
-                UI::Draw::PlusSign(AddVectors(pos, Vector2{0, -size/3}), size / 2);
-                UI::Draw::MinusSign(AddVectors(pos, Vector2{0, size/3}), size / 2);
-
-                // const char* text = to_string(value).c_str();
-                // DrawText(text, pos.x - size*2, pos.y, 15, WHITE);
-            }
-
-            void VoltageAffect(float inVoltage) 
-            {
-                inVoltage -= inVoltage;
-            }
-
-            void Place(Vector2 pos)
-            {
-                // Does the abstract function still run when I have no override keyword? //
-                this->pos = pos;
-                vectorVoltage = ScalarMult(upVector, value);
-            }
-
-
-          
-    };
-}
-
 namespace UI{
     class Button{
  
@@ -231,6 +157,105 @@ namespace UI{
  
 }
 
+
+namespace Components
+{
+    enum ComponentType
+    {
+        VOLTAGE_SOURCE,
+        RESISTOR,
+        WIRE,
+    };
+
+    
+
+    class Component
+    {
+        private:
+            struct ConnectionPoint
+            {
+                Vector2 pos;
+                Component* parent;
+            };
+            Vector2 pos;
+
+        public:
+            ConnectionPoint connectionPoints[2];
+            Vector2 vectorVoltage;
+            bool isPlaced = false;
+            int type;
+            float value; // Represents things as voltage, charge, resistance etc.
+            
+            void SetPos(Vector2 newPos)
+            {
+                if(isPlaced)return;
+                this->pos = newPos;
+            }
+            Vector2 GetPos()
+            {
+                return this->pos;
+            }
+        
+        
+    };
+   
+    
+  
+
+    class VoltageSource : public Component
+    {
+        public:
+            void Draw() 
+            {
+                float size = 30;
+                DrawCircleLinesV(GetPos(), size, WHITE);
+
+                UI::Draw::PlusSign(AddVectors(GetPos(), Vector2{0, -size/3}), size / 2);
+                UI::Draw::MinusSign(AddVectors(GetPos(), Vector2{0, size/3}), size / 2);
+
+                // const char* text = to_string(value).c_str();
+                // DrawText(text, pos.x - size*2, pos.y, 15, WHITE);
+            }
+
+            void Place(Vector2 pos)
+            {
+                // Does the abstract function still run when I have no override keyword? //
+                SetPos(pos);
+                isPlaced = true;
+                vectorVoltage = ScalarMult(upVector, value);
+            }
+
+
+
+    };
+
+    class List
+    {
+        private:
+            Component* currentArray;
+        public:
+            int length = 0;
+
+            void Add(Component* item)
+            {
+                length += 1;
+                Component* fillArray = new Component[length];
+
+                int size = sizeof(currentArray) / sizeof(Component);
+
+                for (int i = 0; i < size; i++)
+                {
+                    
+                }
+
+                delete[] currentArray;
+                currentArray = fillArray;
+            }
+    };
+}
+
+
+
 int main()
 {
     const int screenWidth = 1280;
@@ -250,6 +275,9 @@ int main()
 
     UI::Button wireButton = UI::Button(UiVector(0,0), UiVector(0.1, 0.05), "Place wire", GRAY);
 
+   
+    Components::VoltageSource* placingComponent;
+
     SetTargetFPS(60);              
     while (!WindowShouldClose())    
     {
@@ -257,13 +285,22 @@ int main()
         {
             if(!placing.voltageSource)
             {
+                placingComponent = new Components::VoltageSource();
+                placingComponent->value = 15;
+
                 *currentPlacing = false;
                 placing.voltageSource = true;
                 currentPlacing = &placing.voltageSource;
             }
             else
             {
+                
                 *currentPlacing = !*currentPlacing;
+                if(!placingComponent->isPlaced)
+                {
+                    delete placingComponent;
+                    std::cout << "HUh" << std::endl;
+                }
             }
             
             
@@ -315,7 +352,8 @@ int main()
 
               if(placing.voltageSource)
               {
-                
+                placingComponent->SetPos(MousePos);
+                placingComponent->Draw();
               }
               else if(placing.resistor)
               {
@@ -330,7 +368,7 @@ int main()
               {
                 if(currentPlacing == &placing.voltageSource)
                 {
-                    
+                    placingComponent->Place(MousePos);
                 }
               }
             // if(MousePos.x > wireButton.pos.x && MousePos.x < wireButton.endCorner.x && MousePos.y > wireButton.pos.y && MousePos.y < wireButton.endCorner.y)
