@@ -1,0 +1,1 @@
+g++ -I../src/headers ../src/cpps/vectormath.cpp ../src/cpps/ui.cpp ../src/cpps/components.cpp ../src/cpps/game.cpp ../src/cpps/main.cpp -o ../build/program  -I../Dependancies/include/raylib -L../Dependancies/lib/raylib -lraylib -lopengl32 -lgdi32 -lm -lpthread -lwinmm
